@@ -1,15 +1,25 @@
 {
   "domain": "doralab_notify",
   "name": "DORALAB Benachrichtigungen",
-  "after_dependencies": ["person", "notify", "mobile_app", "persistent_notification"],
-  "codeowners": ["@dominikramachers"],
+  "after_dependencies": [
+    "frontend",
+    "person",
+    "notify",
+    "mobile_app",
+    "persistent_notification"
+  ],
+  "codeowners": [
+    "@dominikramachers"
+  ],
   "config_flow": true,
-  "dependencies": ["websocket_api"],
+  "dependencies": [
+    "http",
+    "websocket_api"
+  ],
   "documentation": "https://github.com/dominikramachers/ha-enhanced-notify",
   "integration_type": "service",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/dominikramachers/ha-enhanced-notify/issues",
   "requirements": [],
-  "single_config_entry": true,
-  "version": "0.2.2"
+  "version": "0.3.0-beta.1"
 }

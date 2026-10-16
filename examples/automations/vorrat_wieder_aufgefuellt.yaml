@@ -1,0 +1,13 @@
+# Meldung automatisch entfernen, wenn die Ursache weggefallen ist (hier: Artikel wieder aufgefüllt).
+# Ein Tag verbindet Meldung und Aufräumen: "delete" mit "tags".
+alias: Meldung entfernen - Vorrat wieder da
+triggers:
+  - trigger: numeric_state
+    entity_id: sensor.vorrat_milch                # anpassen
+    above: 1
+actions:
+  - action: doralab_notify.delete
+    data:
+      tags:
+        - vorrat_niedrig:milch
+mode: single

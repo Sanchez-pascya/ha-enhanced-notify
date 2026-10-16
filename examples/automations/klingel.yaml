@@ -1,0 +1,14 @@
+# Haustür-Klingel: Meldung in der Zentrale, Push je nach Einstellung im Admin-Dashboard.
+alias: Meldung - Klingel
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.haustuer_klingel   # anpassen
+    to: "on"
+actions:
+  - action: doralab_notify.send
+    data:
+      type: klingel
+      message: "Es hat an der Haustür geklingelt."
+      link: /lovelace/kamera   # optional: Dashboard, das beim Tippen öffnet
+      priority: high
+mode: single

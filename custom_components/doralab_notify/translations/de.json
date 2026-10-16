@@ -137,7 +137,7 @@
         },
         "recipients": {
           "name": "Empfänger",
-          "description": "Liste von Personen-Entitäten, z. B. [\"person.dominik\"]. Leere Liste = kein Push."
+          "description": "Liste von Personen-Entitäten, z. B. [\"person.anna\"]. Leere Liste = kein Push."
         },
         "push_when": {
           "name": "Push-Modus",

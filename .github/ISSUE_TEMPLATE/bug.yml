@@ -1,0 +1,23 @@
+name: Fehler melden
+description: Etwas funktioniert nicht wie erwartet
+body:
+  - type: input
+    attributes:
+      label: Version der Integration
+      placeholder: z. B. 0.3.0-beta.1
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Home-Assistant-Version
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Was ist passiert, was hast du erwartet?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Protokoll (Einstellungen → System → Protokolle, Filter doralab_notify)
+      render: text

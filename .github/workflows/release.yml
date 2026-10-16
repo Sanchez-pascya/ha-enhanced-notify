@@ -1,0 +1,44 @@
+name: Release
+
+# Manuell starten: Actions -> Release -> Run workflow (Branch main wählen).
+# Erstellt Tag und GitHub-Release aus dem gewählten Stand. Tags mit "-" (z. B. v0.3.0-beta.1)
+# werden als Vorabversion (Beta) veröffentlicht. Die Notizen stammen aus dem CHANGELOG.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag, z. B. v0.3.0-beta.1 (muss zur Version in manifest.json passen)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Version prüfen
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          manifest=$(python3 -c "import json;print(json.load(open('custom_components/doralab_notify/manifest.json'))['version'])")
+          if [ "${TAG#v}" != "$manifest" ]; then
+            echo "::error::Tag $TAG passt nicht zu manifest.json ($manifest)"
+            exit 1
+          fi
+      - name: Release erstellen
+        env:
+          TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ver="${TAG#v}"
+          awk -v ver="$ver" 'index($0, "## " ver) == 1 {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md
+          flags=""
+          case "$TAG" in
+            *-*)
+              flags="--prerelease"
+              printf '**Beta**: In HACS unter "Neu herunterladen" die Option "Beta-Versionen anzeigen" aktivieren, um diese Version zu erhalten.\n\n' | cat - notes.md > notes2.md && mv notes2.md notes.md
+              ;;
+          esac
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --notes-file notes.md $flags

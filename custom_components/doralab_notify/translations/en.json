@@ -31,5 +31,123 @@
         "name": "Unread"
       }
     }
+  },
+  "services": {
+    "send": {
+      "name": "Send notification",
+      "description": "Creates a notification in the center (or updates it via its tag) and pushes it according to the type settings.",
+      "fields": {
+        "type": {
+          "name": "Type",
+          "description": "Identifier of the notification type, e.g. paket_zugestellt. Unknown types are created automatically."
+        },
+        "message": {
+          "name": "Message",
+          "description": "Notification text."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Defaults to the name of the type."
+        },
+        "tag": {
+          "name": "Tag",
+          "description": "The same tag updates the existing notification instead of creating a new one."
+        },
+        "link": {
+          "name": "Link",
+          "description": "Dashboard path that opens when the notification is tapped."
+        },
+        "icon": {
+          "name": "Icon",
+          "description": "Overrides the icon of the type."
+        },
+        "push": {
+          "name": "Send push",
+          "description": "Turn off to only fill the center."
+        },
+        "priority": {
+          "name": "Priority",
+          "description": "high = time-sensitive push notification."
+        },
+        "category": {
+          "name": "Category",
+          "description": "Only used when a new type is created automatically."
+        },
+        "type_name": {
+          "name": "Type name",
+          "description": "Only used when a new type is created automatically."
+        },
+        "once": {
+          "name": "Only once",
+          "description": "The tag is reported only a single time, even after the notification was deleted (e.g. new calendar events)."
+        },
+        "baseline": {
+          "name": "Remember only",
+          "description": "With \"Only once\": only remember the tag as seen, without notification or push (silent first run)."
+        }
+      }
+    },
+    "mark_read": {
+      "name": "Mark as read",
+      "description": "Marks notifications as read (or unread).",
+      "fields": {
+        "ids": {
+          "name": "IDs",
+          "description": "List of notification IDs."
+        },
+        "all": {
+          "name": "All",
+          "description": "Apply to all notifications."
+        },
+        "read": {
+          "name": "Read",
+          "description": "Turn off to mark as unread."
+        }
+      }
+    },
+    "delete": {
+      "name": "Delete notifications",
+      "description": "Deletes notifications from the center.",
+      "fields": {
+        "ids": {
+          "name": "IDs",
+          "description": "List of notification IDs."
+        },
+        "tags": {
+          "name": "Tags",
+          "description": "List of tags; deletes all notifications with these tags."
+        },
+        "all": {
+          "name": "All",
+          "description": "Delete all notifications."
+        },
+        "only_read": {
+          "name": "Only read",
+          "description": "Delete only read notifications."
+        }
+      }
+    },
+    "set_type": {
+      "name": "Configure type",
+      "description": "Sets the push recipients and mode of a notification type.",
+      "fields": {
+        "type": {
+          "name": "Type",
+          "description": "Identifier of the notification type."
+        },
+        "recipients": {
+          "name": "Recipients",
+          "description": "List of person entities, e.g. [\"person.alice\"]. An empty list means no push."
+        },
+        "push_when": {
+          "name": "Push mode",
+          "description": "always = always, away = only to persons who are not at home."
+        },
+        "reset": {
+          "name": "Reset",
+          "description": "Reset to the catalog default."
+        }
+      }
+    }
   }
 }

@@ -7,6 +7,7 @@ Person sowie Übernahme/Übersetzung der HA-eigenen Benachrichtigungen.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any
 
 import voluptuous as vol
@@ -24,6 +25,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.loader import async_get_integration
 
 from .const import (
     CONF_DISMISS_IMPORTED,
@@ -38,6 +40,9 @@ from .manager import NotificationManager
 from .websocket_api import async_register_websocket_api
 
 _LOGGER = logging.getLogger(__name__)
+
+FRONTEND_FILE = Path(__file__).parent / "frontend" / "doralab-notify.js"
+FRONTEND_URL = f"/{DOMAIN}/doralab-notify.js"
 
 PLATFORMS = [Platform.SENSOR]
 
@@ -92,6 +97,28 @@ def _manager(hass: HomeAssistant) -> NotificationManager:
     return manager
 
 
+async def _async_register_frontend(hass: HomeAssistant) -> None:
+    """Glocke, Meldungsliste und Karten (JavaScript) selbst ausliefern und in HA laden.
+
+    Damit ist keine Dashboard-Ressource nötig. Das Skript lädt sich nur einmal
+    (Schutz im Skript), eine zusätzlich von Hand eingebundene Kopie schadet nicht.
+    """
+    if getattr(hass, "http", None) is None or "frontend" not in hass.config.components:
+        _LOGGER.debug("Kein Frontend/HTTP vorhanden, Oberfläche wird nicht ausgeliefert")
+        return
+    try:
+        from homeassistant.components.frontend import add_extra_js_url
+        from homeassistant.components.http import StaticPathConfig
+
+        await hass.http.async_register_static_paths(
+            [StaticPathConfig(FRONTEND_URL, str(FRONTEND_FILE), cache_headers=False)]
+        )
+        version = (await async_get_integration(hass, DOMAIN)).version
+        add_extra_js_url(hass, f"{FRONTEND_URL}?v={version}")
+    except Exception:  # noqa: BLE001 - die Oberfläche ist optional, Dienste laufen weiter
+        _LOGGER.exception("Die Oberfläche konnte nicht registriert werden")
+
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Websocket-API und Services registrieren."""
     async_register_websocket_api(hass)
@@ -132,6 +159,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         if "push_when" in d:
             kwargs["push_when"] = d["push_when"]
         _manager(hass).async_set_type(d["type"], **kwargs)
+
+    await _async_register_frontend(hass)
 
     hass.services.async_register(
         DOMAIN, "send", handle_send, schema=SEND_SCHEMA, supports_response=SupportsResponse.OPTIONAL

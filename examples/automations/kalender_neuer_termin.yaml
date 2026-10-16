@@ -1,0 +1,39 @@
+# Neue Kalendertermine melden (auch von anderen im Kalender angelegte).
+# Braucht einen Schalter (Helfer "Schalter") input_boolean.kalender_neue_termine_initialisiert, anfangs aus:
+# Beim ersten Lauf werden alle vorhandenen Termine nur vorgemerkt (baseline), danach meldet jeder neue Termin genau einmal.
+alias: Meldung - Neuer Kalendertermin
+triggers:
+  - trigger: time_pattern
+    minutes: "/15"
+  - trigger: homeassistant
+    event: start
+actions:
+  - action: calendar.get_events
+    target:
+      entity_id: calendar.privat                  # anpassen
+    data:
+      duration:
+        days: 180
+    response_variable: cal
+  - variables:
+      events: "{{ cal['calendar.privat'].events | default([], true) }}"
+      first_run: "{{ is_state('input_boolean.kalender_neue_termine_initialisiert', 'off') }}"
+  - repeat:
+      for_each: "{{ events }}"
+      sequence:
+        - action: doralab_notify.send
+          data:
+            type: kalender_neuer_termin
+            title: "Neuer Termin: {{ repeat.item.summary }}"
+            message: "{{ as_timestamp(repeat.item.start) | timestamp_custom('%d.%m.%Y %H:%M') }}"
+            tag: "kal:calendar.privat:{{ repeat.item.summary }}|{{ repeat.item.start }}"
+            once: true
+            baseline: "{{ first_run }}"
+  - if:
+      - condition: template
+        value_template: "{{ first_run }}"
+    then:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.kalender_neue_termine_initialisiert
+mode: single

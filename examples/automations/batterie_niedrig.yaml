@@ -1,0 +1,19 @@
+# Eigener, neuer Typ: legt sich beim ersten Auslösen selbst an (Kategorie "System").
+# Der Push bleibt zunächst aus; Empfänger stellst du im Admin-Dashboard ein.
+alias: Meldung - Batterie niedrig
+triggers:
+  - trigger: numeric_state
+    entity_id:
+      - sensor.fensterkontakt_wohnzimmer_batterie   # anpassen
+      - sensor.bewegungsmelder_flur_batterie
+    below: 15
+actions:
+  - action: doralab_notify.send
+    data:
+      type: batterie_niedrig
+      type_name: Batterie niedrig
+      category: system
+      title: "Batterie niedrig: {{ trigger.to_state.name }}"
+      message: "Nur noch {{ trigger.to_state.state }} % - bitte bald tauschen."
+      tag: "batterie:{{ trigger.entity_id }}"   # eine Meldung je Gerät, wird nicht doppelt gemeldet
+mode: queued
