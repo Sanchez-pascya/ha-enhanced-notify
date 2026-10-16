@@ -468,3 +468,33 @@ async def test_old_system_vacuum_items_move_to_saugroboter(hass: HomeAssistant):
     item = next(i for i in manager.items if i["id"] == "old1")
     assert item["type"] == "saugroboter_wartung" and item["category"] == "saugroboter"
     assert item["title"] == "Wassertank fast leer"
+
+
+async def test_frontend_is_served_and_registered(hass: HomeAssistant):
+    """Die Integration liefert das JavaScript selbst aus und lädt es in HA."""
+    from unittest.mock import AsyncMock, patch
+
+    from homeassistant.components.http import HomeAssistantHTTP
+    from homeassistant.components.frontend import DATA_EXTRA_MODULE_URL, UrlManager
+
+    from custom_components.doralab_notify import FRONTEND_FILE, FRONTEND_URL
+
+    register = AsyncMock()
+    hass.config.components.add("frontend")
+    hass.data[DATA_EXTRA_MODULE_URL] = UrlManager(lambda *_: None, [])
+
+    with patch.object(HomeAssistantHTTP, "async_register_static_paths", register):
+        await _setup(hass)
+
+    assert FRONTEND_FILE.is_file()
+    (paths,) = register.call_args.args
+    assert paths[0].url_path == FRONTEND_URL and paths[0].path == str(FRONTEND_FILE)
+    urls = hass.data[DATA_EXTRA_MODULE_URL].urls
+    assert any(u.startswith(f"{FRONTEND_URL}?v=") for u in urls)
+
+
+async def test_setup_works_without_frontend(hass: HomeAssistant):
+    """Ohne Frontend/HTTP (z. B. Tests, Headless) laufen die Dienste trotzdem."""
+    _, manager = await _setup(hass)
+    result = await manager.async_send("klingel", "Es klingelt", push=False)
+    assert result["id"]

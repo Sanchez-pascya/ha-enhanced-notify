@@ -1,0 +1,9 @@
+# Eigene Dashboard-Ansicht für Admins: Push-Empfänger je Meldungstyp und Person einstellen.
+# Dashboard anlegen -> Rohkonfigurations-Editor -> einfügen. Nur für Administratoren sichtbar machen.
+title: Benachrichtigungen
+views:
+  - title: Push-Einstellungen
+    path: push
+    panel: true
+    cards:
+      - type: custom:doralab-notify-admin

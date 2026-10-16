@@ -1,5 +1,6 @@
-// DORALAB Benachrichtigungen: Glocke (Kiosk- und Handy-Header), Meldungsliste, Admin-Karte (Push je Typ und Person).
-// Quelle: Integration doralab_notify (Websocket doralab_notify/subscribe|mark_read|delete|set_type).
+// DORALAB Benachrichtigungen: Glocke (Sidebar, Bell-Karte, optional Kiosk-/Handy-Header), Meldungsliste, Admin-Karte (Push je Typ und Person).
+// Wird von der Integration doralab_notify selbst ausgeliefert und in HA geladen (Websocket doralab_notify/subscribe|mark_read|delete|set_type).
+// Mehrfaches Laden ist unkritisch: die erste geladene Kopie gewinnt.
 (() => {
 if (window.__doralabNotifyLoaded) return;
 window.__doralabNotifyLoaded = 1;
@@ -18,6 +19,12 @@ N.setHass = (h) => {
   N.started = true;
   h.connection.subscribeMessage((s) => { N.snap = s; N.emit(); }, { type: 'doralab_notify/subscribe' })
     .catch(() => { N.started = false; N.retry = Date.now() + 30000; });
+};
+// hass auch ohne Karte beziehen (Sidebar-Glocke funktioniert damit auf jeder HA-Seite)
+N.autoHass = () => {
+  if (N.started) return;
+  const ha = document.querySelector('home-assistant');
+  if (ha && ha.hass) N.setHass(ha.hass);
 };
 N.emit = () => {
   N.bells.forEach((b) => { if (b.isConnected) N.paint(b); else N.bells.delete(b); });
@@ -92,6 +99,28 @@ const mobileBell = (host) => {
   const w = document.createElement('div'); w.style.cssText = 'display:flex;gap:10px;flex:none';
   sb.parentNode.insertBefore(w, sb); w.appendChild(bellEl('m')); w.appendChild(sb);
 };
+// Glocke als eigenständige Karte für beliebige Dashboards: type: custom:doralab-notify-bell
+class DoralabNotifyBell extends HTMLElement {
+  constructor() { super(); this.attachShadow({ mode: 'open' }); }
+  setConfig(c) { this._c = c || {}; this._build(); }
+  getCardSize() { return 1; }
+  getGridOptions() { return { columns: 3, rows: 1, min_columns: 2, min_rows: 1 }; }
+  set hass(h) { N.setHass(h); }
+  connectedCallback() { this._build(); }
+  _build() {
+    const sr = this.shadowRoot; if (!sr) return;
+    if (!sr.querySelector('.nbell')) {
+      ensureStyle(sr);
+      const st = document.createElement('style'); st.textContent = ':host{display:flex;justify-content:center;padding:6px}'; sr.appendChild(st);
+      sr.appendChild(bellEl('m'));
+    }
+    N.paint(sr.querySelector('.nbell'));
+  }
+}
+def('doralab-notify-bell', DoralabNotifyBell);
+reg('doralab-notify-bell', 'Benachrichtigungen (Glocke)', 'Glocke mit Zähler, öffnet die Meldungsliste');
+
+// Optionale Anbindung an die DORALAB-Dashboards (nur aktiv, wenn es diese Elemente gibt)
 customElements.whenDefined('doralab-kt-page').then((K) => {
   const P = K.prototype; if (P.__nb) return; P.__nb = 1;
   const ou = P._upd;
@@ -112,6 +141,7 @@ const haSidebar = () => {
   return (m && m.shadowRoot && m.shadowRoot.querySelector('ha-sidebar')) || null;
 };
 N.sidebar = () => {
+  N.autoHass();
   const sb = haSidebar(); if (!sb || !sb.shadowRoot) return;
   const item = sb.shadowRoot.getElementById('sidebar-notifications') || sb.shadowRoot.querySelector('.notifications');
   if (!item) return;
@@ -258,6 +288,7 @@ class DoralabNotifyPanel extends HTMLElement {
 }
 def('doralab-notify-panel', DoralabNotifyPanel);
 N.open = () => {
+  N.autoHass();
   let p = document.querySelector('doralab-notify-panel');
   if (!p) { p = document.createElement('doralab-notify-panel'); document.body.appendChild(p); }
   p.open();

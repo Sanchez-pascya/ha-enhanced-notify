@@ -20,7 +20,7 @@ send:
       selector:
         text:
     link:
-      example: /kiosk-test/pakete
+      example: /lovelace/pakete
       selector:
         text:
     icon:
@@ -103,7 +103,7 @@ set_type:
       selector:
         text:
     recipients:
-      example: '["person.dominik"]'
+      example: '["person.anna"]'
       selector:
         object:
     push_when:

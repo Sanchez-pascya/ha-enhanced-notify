@@ -1,0 +1,13 @@
+# Saugroboter meldet einen Fehler (Zustand "error"). Mit tag wird die Meldung aktualisiert statt wiederholt.
+alias: Meldung - Saugroboter Problem
+triggers:
+  - trigger: state
+    entity_id: vacuum.saugroboter               # anpassen
+    to: error
+actions:
+  - action: doralab_notify.send
+    data:
+      type: saugroboter_problem
+      message: "Der Saugroboter hat ein Problem gemeldet: {{ state_attr('vacuum.saugroboter', 'error') | default('unbekannt', true) }}"
+      tag: saugroboter_problem
+mode: single

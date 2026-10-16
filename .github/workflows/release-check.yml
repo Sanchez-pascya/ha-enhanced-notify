@@ -1,0 +1,26 @@
+name: Release check
+
+# Stellt sicher, dass der Tag eines Releases zur Version in manifest.json passt,
+# damit HACS und Home Assistant dieselbe Version sehen (Update-Erkennung).
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - name: Tag und manifest.json vergleichen
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          manifest=$(python3 -c "import json;print(json.load(open('custom_components/doralab_notify/manifest.json'))['version'])")
+          if [ "${tag#v}" != "$manifest" ]; then
+            echo "::error::Tag $tag passt nicht zu manifest.json ($manifest)"
+            exit 1
+          fi

@@ -1,0 +1,15 @@
+# Waschmaschine fertig: Leistung bleibt 2 Minuten unter 5 W (Steckdose mit Leistungsmessung).
+# Tipp: Gerät läuft meist mit Pausen; passe Schwelle und Dauer an, damit sie nicht zu früh auslöst.
+alias: Meldung - Waschmaschine fertig
+triggers:
+  - trigger: numeric_state
+    entity_id: sensor.waschmaschine_leistung    # anpassen
+    below: 5
+    for:
+      minutes: 2
+actions:
+  - action: doralab_notify.send
+    data:
+      type: waschmaschine_fertig
+      message: "Die Waschmaschine ist fertig. Wäsche kann ausgeräumt werden."
+mode: single
