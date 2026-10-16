@@ -38,7 +38,7 @@ Für Ereignisse, die nicht wiederkehren sollen, z. B. neue Kalendertermine:
 action: doralab_notify.send
 data:
   type: kalender_neuer_termin
-  message: "Dominik & Sina · Do., 29.10. 08:00"
+  message: "PRIVAT · Do., 29.10. 08:00"
   tag: "kal:calendar.xyz:UID-123"
   once: true        # dieser Tag wird nur ein einziges Mal gemeldet, auch nach dem Löschen
   baseline: true    # optional, nur mit once: Tag nur vormerken, keine Meldung und kein Push (stiller Erstlauf)
