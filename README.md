@@ -67,7 +67,8 @@ Die Dateien liegen unter `frontend/doralab-notify.js` und werden als Dashboard-R
 Sie liefern:
 
 - Glocke mit Zähler im Kiosk-Header (`doralab-kt-page`) und im Handy-Header (`doralab-home-header`), die sich dort automatisch einhängt
-- Meldungsliste als Popup (Filter nach Kategorie, gelesen/ungelesen, löschen, „Alle gelesen“, „Gelesene löschen“)
+- Meldungsliste als Popup (Filter Alle / Ungelesen / Kategorie, löschen, „Alle gelesen“, „Gelesene löschen“)
+- Die Standard-Glocke der HA-Seitenleiste (Web und App) öffnet diese Liste und zeigt den Zähler der Integration statt der leeren HA-Schublade
 - Karte `custom:doralab-notify-admin`: Push-Empfänger und Modus je Meldungstyp, Testmeldung, Zurücksetzen auf Standard
 
 Alles läuft über die Websocket-Befehle der Integration, der Lesestatus ist damit auf allen Geräten identisch.

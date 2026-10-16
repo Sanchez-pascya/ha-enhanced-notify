@@ -21,6 +21,7 @@ N.setHass = (h) => {
 };
 N.emit = () => {
   N.bells.forEach((b) => { if (b.isConnected) N.paint(b); else N.bells.delete(b); });
+  try { N.sidebar(); } catch (e) { /* ignore */ }
   N.ls.forEach((f) => { try { f(N.snap); } catch (e) { console.error('doralab-notify', e); } });
 };
 N.call = (msg) => N.hass.callWS(msg);
@@ -102,6 +103,43 @@ customElements.whenDefined('doralab-home-header').then((C) => {
   P._update = function () { const r = ou.apply(this, arguments); try { N.setHass(this._h); mobileBell(this); } catch (e) { console.error('doralab-notify mobile', e); } return r; };
 });
 
+// ---------- Glocke der HA-Sidebar übernehmen (Web und App) ----------
+// Die Standard-Glocke von HA öffnet statt der leeren HA-Schublade unsere Liste und zeigt unseren Zähler.
+const SB_CSS = '#sidebar-notifications .badge:not([data-nb]){display:none!important}';
+const haSidebar = () => {
+  const ha = document.querySelector('home-assistant');
+  const m = ha && ha.shadowRoot && ha.shadowRoot.querySelector('home-assistant-main');
+  return (m && m.shadowRoot && m.shadowRoot.querySelector('ha-sidebar')) || null;
+};
+N.sidebar = () => {
+  const sb = haSidebar(); if (!sb || !sb.shadowRoot) return;
+  const item = sb.shadowRoot.getElementById('sidebar-notifications') || sb.shadowRoot.querySelector('.notifications');
+  if (!item) return;
+  if (!sb.shadowRoot.querySelector('style.nbs2')) {
+    const st = document.createElement('style'); st.className = 'nbs2'; st.textContent = SB_CSS; sb.shadowRoot.appendChild(st);
+  }
+  if (!item._nbHooked) {
+    item._nbHooked = true;
+    item.addEventListener('click', (e) => {
+      e.stopImmediatePropagation(); e.preventDefault();
+      N.open();
+      if (window.matchMedia('(max-width:870px)').matches) sb.dispatchEvent(new CustomEvent('hass-toggle-menu', { bubbles: true, composed: true, detail: { open: false } }));
+    }, true);
+  }
+  const n = unread(), ic = item.querySelector('ha-svg-icon');
+  ['start', 'end'].forEach((slot) => {
+    let b = item.querySelector(`.badge[data-nb][slot="${slot}"]`);
+    if (!n) { if (b) b.remove(); return; }
+    if (!b) {
+      b = document.createElement('span'); b.className = 'badge'; b.dataset.nb = '1'; b.setAttribute('slot', slot);
+      if (slot === 'start' && ic) ic.after(b); else item.appendChild(b);
+    }
+    const t = n > 99 ? '99+' : String(n); if (b.textContent !== t) b.textContent = t;
+  });
+};
+setTimeout(() => { try { N.sidebar(); } catch (e) { /* ignore */ } }, 1500);
+setInterval(() => { try { N.sidebar(); } catch (e) { /* ignore */ } }, 3000);
+
 // ---------- Meldungsliste (Popup) ----------
 const PCSS = `
 *{box-sizing:border-box}
@@ -180,14 +218,15 @@ class DoralabNotifyPanel extends HTMLElement {
     // Filter
     const counts = {}, ucounts = {};
     list.forEach((i) => { counts[i.category] = (counts[i.category] || 0) + 1; if (!i.read) ucounts[i.category] = (ucounts[i.category] || 0) + 1; });
-    if (N.filter !== 'all' && !counts[N.filter]) N.filter = 'all';
+    if (N.filter !== 'all' && N.filter !== 'unread' && !counts[N.filter]) N.filter = 'all';
     const order = Object.keys((N.snap && N.snap.categories) || {}).filter((k) => counts[k]);
     const chip = (id, name, icon, un) => `<button class="cp${N.filter === id ? ' on' : ''}" data-f="${esc(id)}">${icon ? `<ha-icon icon="${esc(icon)}"></ha-icon>` : ''}${esc(name)}${un ? `<i>${un}</i>` : ''}</button>`;
-    const fl = order.length > 1 ? chip('all', 'Alle', '', n) + order.map((k) => chip(k, cat(k).name, cat(k).icon, ucounts[k])).join('') : '';
+    const showFl = list.length > 0 && (order.length > 1 || (n > 0 && n < list.length) || N.filter === 'unread');
+    const fl = showFl ? chip('all', 'Alle', '', 0) + chip('unread', 'Ungelesen', 'mdi:email-fast-outline', n) + order.map((k) => chip(k, cat(k).name, cat(k).icon, ucounts[k])).join('') : '';
     const flEl = q('.fl'); if (flEl.dataset.h !== fl) { flEl.dataset.h = fl; flEl.innerHTML = fl; }
     flEl.style.display = fl ? 'flex' : 'none';
     // Liste
-    const shown = list.filter((i) => N.filter === 'all' || i.category === N.filter);
+    const shown = list.filter((i) => N.filter === 'all' || (N.filter === 'unread' ? !i.read : i.category === N.filter));
     const types = (N.snap && N.snap.types) || {};
     let html = '', last = '';
     shown.forEach((i) => {
@@ -195,7 +234,7 @@ class DoralabNotifyPanel extends HTMLElement {
       const c = cat(i.category), icon = i.icon || (types[i.type] && types[i.type].icon) || c.icon;
       html += `<div class="it${i.read ? '' : ' un'}" data-id="${esc(i.id)}" data-l="${esc(i.link || '')}" data-r="${i.read ? 1 : 0}"><span class="ic" style="--c:${esc(c.color)}"><ha-icon icon="${esc(icon)}"></ha-icon></span><div class="tx"><div class="t1"><b>${esc(i.title)}</b>${i.count > 1 ? `<i class="cn">×${i.count}</i>` : ''}</div><div class="t2">${esc(i.message)}</div><div class="t3">${esc(c.name)} · ${esc(when(i.updated))}</div></div><div class="ac"><button class="ib" data-a="toggle" aria-label="${i.read ? 'Als ungelesen markieren' : 'Als gelesen markieren'}"><ha-icon icon="${i.read ? 'mdi:email-outline' : 'mdi:email-open-outline'}"></ha-icon></button><button class="ib" data-a="del" aria-label="Löschen"><ha-icon icon="mdi:trash-can-outline"></ha-icon></button></div></div>`;
     });
-    if (!html) html = `<div class="em"><ha-icon icon="mdi:bell-sleep-outline"></ha-icon><b>Alles ruhig</b><span>${N.snap ? 'Keine Benachrichtigungen' : 'Verbindung zur Benachrichtigungszentrale wird aufgebaut …'}</span></div>`;
+    if (!html) html = `<div class="em"><ha-icon icon="mdi:bell-sleep-outline"></ha-icon><b>Alles ruhig</b><span>${N.snap ? (N.filter === 'unread' ? 'Alles gelesen' : 'Keine Benachrichtigungen') : 'Verbindung zur Benachrichtigungszentrale wird aufgebaut …'}</span></div>`;
     const ls = q('.ls'); if (ls.dataset.h === html) return;
     const top = ls.scrollTop; ls.dataset.h = html; ls.innerHTML = html; ls.scrollTop = top;
   }
