@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import timedelta
+import hashlib
 import logging
 from typing import Any
 import uuid
@@ -59,6 +60,9 @@ class NotificationManager:
         self.stats: dict[str, dict[str, Any]] = {}
         # Bereits gemeldete Tags (für ``once``), älteste zuerst, begrenzt
         self.seen: dict[str, None] = {}
+        # Zuletzt gemeldeter Inhalt je Tag (tag -> Fingerabdruck). Verhindert, dass
+        # gelesene oder gelöschte Meldungen mit gleichem Inhalt neu auftauchen.
+        self.announced: dict[str, str] = {}
         self._listeners: list[Callable[[], None]] = []
 
     # ------------------------------------------------------------------ Speicher
@@ -70,6 +74,14 @@ class NotificationManager:
         self.type_settings = dict(data.get("type_settings", {}))
         self.stats = dict(data.get("stats", {}))
         self.seen = dict.fromkeys(data.get("seen", []))
+        self.announced = dict(data.get("announced", {}))
+        # Bestehende Meldungen mit Tag merken (Update von einer Version ohne Merkzettel)
+        for item in reversed(self.items):
+            item_tag = item.get("tag")
+            if item_tag and item_tag not in self.announced and not str(item_tag).startswith(
+                TAG_PERSISTENT_PREFIX
+            ):
+                self.announced[item_tag] = self._fingerprint(item["title"], item["message"])
 
     def _data_to_save(self) -> dict[str, Any]:
         return {
@@ -78,6 +90,7 @@ class NotificationManager:
             "type_settings": self.type_settings,
             "stats": self.stats,
             "seen": list(self.seen),
+            "announced": self.announced,
         }
 
     async def async_flush(self) -> None:
@@ -215,6 +228,10 @@ class NotificationManager:
 
     # ------------------------------------------------------------------ Senden
 
+    @staticmethod
+    def _fingerprint(title: str, message: str) -> str:
+        return hashlib.sha1(f"{title}\x1f{message}".encode()).hexdigest()[:16]  # noqa: S324
+
     async def async_send(
         self,
         type_id: str,
@@ -231,6 +248,7 @@ class NotificationManager:
         data: dict[str, Any] | None = None,
         once: bool = False,
         baseline: bool = False,
+        remember: bool = True,
     ) -> dict[str, Any]:
         """Neue Meldung anlegen (oder per ``tag`` aktualisieren) und pushen.
 
@@ -238,6 +256,10 @@ class NotificationManager:
         Meldung inzwischen gelöscht wurde (z. B. neue Kalendertermine).
         ``baseline`` (nur mit ``once``): den ``tag`` nur als gesehen vormerken,
         ohne Meldung und Push (stiller Erstlauf).
+        ``remember``: Mit ``tag`` wird der zuletzt gemeldete Inhalt dauerhaft
+        gemerkt. Dieselbe Meldung (gleicher Titel und Text) taucht danach nicht
+        wieder auf, auch nicht nach Lesen, Löschen oder einem Neustart; erst ein
+        geänderter Inhalt meldet wieder.
         """
         if (once or baseline) and not tag:
             raise ServiceValidationError("once und baseline brauchen einen tag")
@@ -258,6 +280,13 @@ class NotificationManager:
         info = self.types_view()[type_id]
         final_title = title or info["name"]
         now = dt_util.utcnow().isoformat()
+
+        fingerprint: str | None = None
+        if tag and remember:
+            fingerprint = self._fingerprint(final_title, message)
+            if self.announced.get(tag) == fingerprint:
+                known = next((i for i in self.items if i.get("tag") == tag), None)
+                return {"id": known["id"] if known else None, "deduplicated": True}
 
         existing = next((i for i in self.items if tag and i.get("tag") == tag), None)
         if existing is not None:
@@ -299,6 +328,12 @@ class NotificationManager:
                 "data": dict(data or {}),
             }
             self.items.insert(0, item)
+
+        if fingerprint and tag:
+            self.announced.pop(tag, None)
+            self.announced[tag] = fingerprint
+            while len(self.announced) > MAX_SEEN:
+                self.announced.pop(next(iter(self.announced)))
 
         stat = self.stats.setdefault(type_id, {"count": 0})
         stat["last"] = now
@@ -451,6 +486,8 @@ class NotificationManager:
                 "original_title": title,
                 "original_message": message,
             },
+            # HA-Meldungen können sich legitim wiederholen (gleicher Text, neues Ereignis)
+            remember=False,
         )
         return True
 
