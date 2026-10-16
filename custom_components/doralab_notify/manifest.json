@@ -5,10 +5,10 @@
   "codeowners": ["@dominikramachers"],
   "config_flow": true,
   "dependencies": ["websocket_api"],
-  "documentation": "https://github.com/dominikramachers/ha-doralab-notify",
+  "documentation": "https://github.com/dominikramachers/ha-enhanced-notify",
   "integration_type": "service",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/dominikramachers/ha-doralab-notify/issues",
+  "issue_tracker": "https://github.com/dominikramachers/ha-enhanced-notify/issues",
   "requirements": [],
   "single_config_entry": true,
   "version": "0.1.0"
