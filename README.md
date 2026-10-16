@@ -30,12 +30,28 @@ data:
 
 Gleicher `tag` mit geändertem Text aktualisiert die vorhandene Meldung (wird wieder ungelesen, rückt nach oben, Push wird ersetzt). Gleicher Tag mit gleichem Text wird ignoriert, das fängt Zustands-Flattern ab.
 
+### Nur einmal melden (`once`, `baseline`)
+
+Für Ereignisse, die nicht wiederkehren sollen, z. B. neue Kalendertermine:
+
+```yaml
+action: doralab_notify.send
+data:
+  type: kalender_neuer_termin
+  message: "Dominik & Sina · Do., 29.10. 08:00"
+  tag: "kal:calendar.xyz:UID-123"
+  once: true        # dieser Tag wird nur ein einziges Mal gemeldet, auch nach dem Löschen
+  baseline: true    # optional, nur mit once: Tag nur vormerken, keine Meldung und kein Push (stiller Erstlauf)
+```
+
+Die gesehenen Tags werden dauerhaft gespeichert (bis 5000, die ältesten fallen heraus).
+
 ## Weitere Aktionen
 
 | Aktion | Zweck |
 |---|---|
 | `doralab_notify.mark_read` | `ids`, `all`, `read` |
-| `doralab_notify.delete` | `ids`, `all`, `only_read` |
+| `doralab_notify.delete` | `ids`, `tags` (löscht alle Meldungen mit diesem Tag), `all`, `only_read` |
 | `doralab_notify.set_type` | `type`, `recipients` (Personen), `push_when` (`always`/`away`), `reset` |
 
 Beim Senden löst die Integration das Ereignis `doralab_notify_created` aus (für eigene Automationen).
@@ -60,3 +76,15 @@ Regeln in `translate.py`. Was nicht erkannt wird, landet unverändert als Typ `h
 python -m venv venv && venv/bin/pip install pytest-homeassistant-custom-component
 venv/bin/pytest
 ```
+
+## Oberfläche (Glocke, Liste, Admin-Karte)
+
+Die Dateien liegen unter `frontend/doralab-notify.js` und werden als Dashboard-Ressource (Typ *Modul*) eingebunden.
+Sie liefern:
+
+- Glocke mit Zähler im Kiosk-Header (`doralab-kt-page`) und im Handy-Header (`doralab-home-header`), die sich dort automatisch einhängt
+- Meldungsliste als Popup (Filter Alle / Ungelesen / Kategorie, löschen, „Alle gelesen“, „Gelesene löschen“)
+- Die Standard-Glocke der HA-Seitenleiste (Web und App) öffnet diese Liste und zeigt den Zähler der Integration statt der leeren HA-Schublade
+- Karte `custom:doralab-notify-admin`: Push-Empfänger und Modus je Meldungstyp, Testmeldung, Zurücksetzen auf Standard
+
+Alles läuft über die Websocket-Befehle der Integration, der Lesestatus ist damit auf allen Geräten identisch.

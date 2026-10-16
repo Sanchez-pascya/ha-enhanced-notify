@@ -46,7 +46,9 @@
         "push": {"name": "Push senden", "description": "Auf aus setzen, um nur die Zentrale zu füllen."},
         "priority": {"name": "Priorität", "description": "high = zeitkritische Push-Meldung."},
         "category": {"name": "Kategorie", "description": "Nur beim automatischen Anlegen eines neuen Typs."},
-        "type_name": {"name": "Typ-Name", "description": "Nur beim automatischen Anlegen eines neuen Typs."}
+        "type_name": {"name": "Typ-Name", "description": "Nur beim automatischen Anlegen eines neuen Typs."},
+        "once": {"name": "Nur einmal", "description": "Der Tag wird nur ein einziges Mal gemeldet, auch wenn die Meldung gelöscht wurde (z. B. neue Kalendertermine)."},
+        "baseline": {"name": "Nur vormerken", "description": "Mit „Nur einmal“: Tag nur als gesehen vormerken, ohne Meldung und Push (stiller Erstlauf)."}
       }
     },
     "mark_read": {
@@ -63,6 +65,7 @@
       "description": "Löscht Meldungen aus der Zentrale.",
       "fields": {
         "ids": {"name": "IDs", "description": "Liste von Meldungs-IDs."},
+        "tags": {"name": "Tags", "description": "Liste von Tags; löscht alle Meldungen mit diesem Tag."},
         "all": {"name": "Alle", "description": "Alle Meldungen löschen."},
         "only_read": {"name": "Nur gelesene", "description": "Nur gelesene Meldungen löschen."}
       }

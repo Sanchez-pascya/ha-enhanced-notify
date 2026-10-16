@@ -338,3 +338,62 @@ async def test_options_flow(hass: HomeAssistant):
     assert result["type"] == "create_entry"
     await hass.async_block_till_done()
     assert hass.data[DOMAIN].entry.options["retention_read_days"] == 7
+
+
+async def test_once_and_baseline(hass: HomeAssistant):
+    _, manager = await _setup(hass)
+    # stiller Erstlauf: nur vormerken
+    res = await hass.services.async_call(
+        DOMAIN,
+        "send",
+        {"type": "kalender_neuer_termin", "message": "alt", "tag": "kal:1", "once": True, "baseline": True},
+        blocking=True,
+        return_response=True,
+    )
+    assert res["baseline"] is True and manager.items == []
+    # vorgemerkte und neue Tags
+    res = await hass.services.async_call(
+        DOMAIN,
+        "send",
+        {"type": "kalender_neuer_termin", "message": "alt", "tag": "kal:1", "once": True},
+        blocking=True,
+        return_response=True,
+    )
+    assert res["deduplicated"] is True and manager.items == []
+    await hass.services.async_call(
+        DOMAIN,
+        "send",
+        {"type": "kalender_neuer_termin", "message": "neu", "tag": "kal:2", "once": True, "push": False},
+        blocking=True,
+    )
+    assert [i["message"] for i in manager.items] == ["neu"]
+    # nach dem Löschen nicht erneut melden
+    await hass.services.async_call(DOMAIN, "delete", {"all": True}, blocking=True)
+    await hass.services.async_call(
+        DOMAIN,
+        "send",
+        {"type": "kalender_neuer_termin", "message": "neu", "tag": "kal:2", "once": True, "push": False},
+        blocking=True,
+    )
+    assert manager.items == []
+    with pytest.raises(ServiceValidationError):
+        await manager.async_send("klingel", "x", once=True)
+
+
+async def test_delete_by_tag(hass: HomeAssistant):
+    _, manager = await _setup(hass)
+    await manager.async_send("vorrat_niedrig", "a", tag="v:a", push=False)
+    await manager.async_send("vorrat_niedrig", "b", tag="v:b", push=False)
+    await manager.async_send("klingel", "c", push=False)
+    await hass.services.async_call(DOMAIN, "delete", {"tags": ["v:a", "gibt-es-nicht"]}, blocking=True)
+    assert sorted(i["message"] for i in manager.items) == ["b", "c"]
+
+
+async def test_seen_persists_across_reload(hass: HomeAssistant):
+    entry, manager = await _setup(hass)
+    await manager.async_send("kalender_neuer_termin", "x", tag="kal:9", once=True, baseline=True)
+    await manager.async_flush()
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    manager = hass.data[DOMAIN]
+    assert "kal:9" in manager.seen
