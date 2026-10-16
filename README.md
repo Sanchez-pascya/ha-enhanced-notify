@@ -60,3 +60,14 @@ Regeln in `translate.py`. Was nicht erkannt wird, landet unverändert als Typ `h
 python -m venv venv && venv/bin/pip install pytest-homeassistant-custom-component
 venv/bin/pytest
 ```
+
+## Oberfläche (Glocke, Liste, Admin-Karte)
+
+Die Dateien liegen unter `frontend/doralab-notify.js` und werden als Dashboard-Ressource (Typ *Modul*) eingebunden.
+Sie liefern:
+
+- Glocke mit Zähler im Kiosk-Header (`doralab-kt-page`) und im Handy-Header (`doralab-home-header`), die sich dort automatisch einhängt
+- Meldungsliste als Popup (Filter nach Kategorie, gelesen/ungelesen, löschen, „Alle gelesen“, „Gelesene löschen“)
+- Karte `custom:doralab-notify-admin`: Push-Empfänger und Modus je Meldungstyp, Testmeldung, Zurücksetzen auf Standard
+
+Alles läuft über die Websocket-Befehle der Integration, der Lesestatus ist damit auf allen Geräten identisch.
