@@ -82,6 +82,36 @@ class NotificationManager:
                 TAG_PERSISTENT_PREFIX
             ):
                 self.announced[item_tag] = self._fingerprint(item["title"], item["message"])
+        self._retranslate_persistent()
+
+    def _retranslate_persistent(self) -> None:
+        """Als „System“ übernommene HA-Meldungen mit den aktuellen Regeln neu einordnen."""
+        types = self.types_view()
+        for item in self.items:
+            tag = str(item.get("tag") or "")
+            data = item.get("data") or {}
+            if (
+                item.get("type") != "ha_system"
+                or not tag.startswith(TAG_PERSISTENT_PREFIX)
+                or data.get("source") != SOURCE_PERSISTENT
+            ):
+                continue
+            result = translate_persistent(
+                tag[len(TAG_PERSISTENT_PREFIX):],
+                data.get("original_title"),
+                data.get("original_message"),
+            )
+            info = types.get(result["type"])
+            if result["type"] == "ha_system" or not info:
+                continue
+            item.update(
+                type=result["type"],
+                category=info["category"],
+                title=result["title"],
+                message=result["message"],
+                icon=None,
+            )
+            self._changed()
 
     def _data_to_save(self) -> dict[str, Any]:
         return {

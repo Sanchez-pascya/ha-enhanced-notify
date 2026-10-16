@@ -6,7 +6,7 @@ Zentrale Benachrichtigungsliste für Home Assistant, gedacht für Wand-Tablet (K
 - **Katalog der Meldungstypen** (Pakete, Haustür, Wäsche, Saugroboter, Kalender, Keller-Vorrat, System). Unbekannte Typen legen sich beim ersten Auslösen selbst an.
 - **Push pro Typ und Person**: Welche Personen bekommen welchen Typ als Push, und ob immer oder nur, wenn die Person nicht zuhause ist.
 - **Push-Aufräumen**: Wird eine Meldung irgendwo gelesen oder gelöscht, verschwindet der Push auf den Handys. Der Button „Gelesen“ in der Push-Meldung markiert sie in der Zentrale als gelesen.
-- **HA-Benachrichtigungen übernehmen**: persistente HA-Meldungen (z. B. vom Saugroboter) werden ins Deutsche übersetzt und in die Zentrale übernommen.
+- **HA-Benachrichtigungen übernehmen**: persistente HA-Meldungen werden ins Deutsche übersetzt und in die Zentrale übernommen. Meldungen des Saugroboters (deutsch oder englisch, z. B. Wassertank, Verbrauchsmaterial, Reinigung fertig, Störung) landen immer in der Kategorie Saugroboter; unbekannte Saugroboter-Meldungen unter „Saugroboter: Wartung“. Früher als „System“ übernommene Saugroboter-Meldungen werden beim Start neu eingeordnet.
 - Sensor `Ungelesen` (Zähler für die Glocke), Aufbewahrung per Optionen.
 
 ## Installation (HACS)
