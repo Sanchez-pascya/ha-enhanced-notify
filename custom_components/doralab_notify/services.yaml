@@ -1,0 +1,106 @@
+send:
+  fields:
+    type:
+      required: true
+      example: paket_zugestellt
+      selector:
+        text:
+    message:
+      required: true
+      example: "Hermes: Dein Paket wurde zugestellt"
+      selector:
+        text:
+          multiline: true
+    title:
+      example: Paket zugestellt
+      selector:
+        text:
+    tag:
+      example: paket:H1234567890
+      selector:
+        text:
+    link:
+      example: /kiosk-test/pakete
+      selector:
+        text:
+    icon:
+      example: mdi:package-variant-closed-check
+      selector:
+        icon:
+    push:
+      default: true
+      selector:
+        boolean:
+    priority:
+      selector:
+        select:
+          options:
+            - normal
+            - high
+    category:
+      selector:
+        select:
+          options:
+            - pakete
+            - haustuer
+            - waesche
+            - saugroboter
+            - kalender
+            - vorrat
+            - system
+    type_name:
+      example: Mein neuer Typ
+      selector:
+        text:
+
+mark_read:
+  fields:
+    ids:
+      example: '["a1b2c3"]'
+      selector:
+        object:
+    all:
+      default: false
+      selector:
+        boolean:
+    read:
+      default: true
+      selector:
+        boolean:
+
+delete:
+  fields:
+    ids:
+      example: '["a1b2c3"]'
+      selector:
+        object:
+    all:
+      default: false
+      selector:
+        boolean:
+    only_read:
+      default: false
+      selector:
+        boolean:
+
+set_type:
+  fields:
+    type:
+      required: true
+      example: klingel
+      selector:
+        text:
+    recipients:
+      example: '["person.dominik"]'
+      selector:
+        object:
+    push_when:
+      selector:
+        select:
+          options:
+            - always
+            - away
+    reset:
+      default: false
+      selector:
+        boolean:

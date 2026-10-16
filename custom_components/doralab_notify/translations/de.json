@@ -1,0 +1,141 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "DORALAB Benachrichtigungen",
+        "description": "Richtet die zentrale Benachrichtigungsliste ein. Push-Empfänger je Meldungstyp stellst du danach in der Einstellungsübersicht ein."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Die Benachrichtigungszentrale ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Einstellungen",
+        "data": {
+          "retention_read_days": "Gelesene Meldungen löschen nach (Tage)",
+          "retention_days": "Alle Meldungen löschen nach (Tage)",
+          "max_items": "Maximale Anzahl Meldungen",
+          "import_persistent": "HA-Benachrichtigungen übernehmen und übersetzen",
+          "dismiss_imported": "Übernommene HA-Benachrichtigungen in HA ausblenden",
+          "excluded_notify_services": "Geräte, die keine Push-Meldungen bekommen sollen"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "unread": {
+        "name": "Ungelesen"
+      }
+    }
+  },
+  "services": {
+    "send": {
+      "name": "Meldung senden",
+      "description": "Legt eine Meldung in der Zentrale an (oder aktualisiert sie über den Tag) und pusht sie je nach Typ-Einstellung.",
+      "fields": {
+        "type": {
+          "name": "Typ",
+          "description": "Kennung des Meldungstyps, z. B. paket_zugestellt. Unbekannte Typen werden automatisch angelegt."
+        },
+        "message": {
+          "name": "Text",
+          "description": "Meldungstext."
+        },
+        "title": {
+          "name": "Titel",
+          "description": "Standard ist der Name des Typs."
+        },
+        "tag": {
+          "name": "Tag",
+          "description": "Gleicher Tag aktualisiert die vorhandene Meldung statt eine neue anzulegen."
+        },
+        "link": {
+          "name": "Link",
+          "description": "Dashboard-Pfad, der beim Tippen geöffnet wird."
+        },
+        "icon": {
+          "name": "Icon",
+          "description": "Überschreibt das Icon des Typs."
+        },
+        "push": {
+          "name": "Push senden",
+          "description": "Auf aus setzen, um nur die Zentrale zu füllen."
+        },
+        "priority": {
+          "name": "Priorität",
+          "description": "high = zeitkritische Push-Meldung."
+        },
+        "category": {
+          "name": "Kategorie",
+          "description": "Nur beim automatischen Anlegen eines neuen Typs."
+        },
+        "type_name": {
+          "name": "Typ-Name",
+          "description": "Nur beim automatischen Anlegen eines neuen Typs."
+        }
+      }
+    },
+    "mark_read": {
+      "name": "Als gelesen markieren",
+      "description": "Markiert Meldungen als gelesen (oder ungelesen).",
+      "fields": {
+        "ids": {
+          "name": "IDs",
+          "description": "Liste von Meldungs-IDs."
+        },
+        "all": {
+          "name": "Alle",
+          "description": "Alle Meldungen betreffen."
+        },
+        "read": {
+          "name": "Gelesen",
+          "description": "Auf aus setzen für ungelesen."
+        }
+      }
+    },
+    "delete": {
+      "name": "Meldungen löschen",
+      "description": "Löscht Meldungen aus der Zentrale.",
+      "fields": {
+        "ids": {
+          "name": "IDs",
+          "description": "Liste von Meldungs-IDs."
+        },
+        "all": {
+          "name": "Alle",
+          "description": "Alle Meldungen löschen."
+        },
+        "only_read": {
+          "name": "Nur gelesene",
+          "description": "Nur gelesene Meldungen löschen."
+        }
+      }
+    },
+    "set_type": {
+      "name": "Typ einstellen",
+      "description": "Push-Empfänger und -Modus eines Meldungstyps festlegen.",
+      "fields": {
+        "type": {
+          "name": "Typ",
+          "description": "Kennung des Meldungstyps."
+        },
+        "recipients": {
+          "name": "Empfänger",
+          "description": "Liste von Personen-Entitäten, z. B. [\"person.dominik\"]. Leere Liste = kein Push."
+        },
+        "push_when": {
+          "name": "Push-Modus",
+          "description": "always = immer, away = nur an Personen, die nicht zuhause sind."
+        },
+        "reset": {
+          "name": "Zurücksetzen",
+          "description": "Auf die Vorgabe des Katalogs zurücksetzen."
+        }
+      }
+    }
+  }
+}

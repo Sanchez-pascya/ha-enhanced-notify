@@ -1,0 +1,35 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "DORALAB Notifications",
+        "description": "Sets up the central notification list. Push recipients per notification type are configured afterwards in the settings overview."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "The notification center is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Settings",
+        "data": {
+          "retention_read_days": "Delete read notifications after (days)",
+          "retention_days": "Delete all notifications after (days)",
+          "max_items": "Maximum number of notifications",
+          "import_persistent": "Import and translate HA notifications",
+          "dismiss_imported": "Dismiss imported HA notifications in HA",
+          "excluded_notify_services": "Devices that should not receive push notifications"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "unread": {
+        "name": "Unread"
+      }
+    }
+  }
+}
