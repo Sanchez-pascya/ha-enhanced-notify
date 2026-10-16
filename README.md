@@ -30,12 +30,28 @@ data:
 
 Gleicher `tag` mit geändertem Text aktualisiert die vorhandene Meldung (wird wieder ungelesen, rückt nach oben, Push wird ersetzt). Gleicher Tag mit gleichem Text wird ignoriert, das fängt Zustands-Flattern ab.
 
+### Nur einmal melden (`once`, `baseline`)
+
+Für Ereignisse, die nicht wiederkehren sollen, z. B. neue Kalendertermine:
+
+```yaml
+action: doralab_notify.send
+data:
+  type: kalender_neuer_termin
+  message: "Dominik & Sina · Do., 29.10. 08:00"
+  tag: "kal:calendar.xyz:UID-123"
+  once: true        # dieser Tag wird nur ein einziges Mal gemeldet, auch nach dem Löschen
+  baseline: true    # optional, nur mit once: Tag nur vormerken, keine Meldung und kein Push (stiller Erstlauf)
+```
+
+Die gesehenen Tags werden dauerhaft gespeichert (bis 5000, die ältesten fallen heraus).
+
 ## Weitere Aktionen
 
 | Aktion | Zweck |
 |---|---|
 | `doralab_notify.mark_read` | `ids`, `all`, `read` |
-| `doralab_notify.delete` | `ids`, `all`, `only_read` |
+| `doralab_notify.delete` | `ids`, `tags` (löscht alle Meldungen mit diesem Tag), `all`, `only_read` |
 | `doralab_notify.set_type` | `type`, `recipients` (Personen), `push_when` (`always`/`away`), `reset` |
 
 Beim Senden löst die Integration das Ereignis `doralab_notify_created` aus (für eigene Automationen).

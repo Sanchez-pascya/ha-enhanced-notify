@@ -56,6 +56,8 @@ SEND_SCHEMA = vol.Schema(
         vol.Optional("category"): cv.string,
         vol.Optional("type_name"): cv.string,
         vol.Optional("data"): dict,
+        vol.Optional("once", default=False): cv.boolean,
+        vol.Optional("baseline", default=False): cv.boolean,
     }
 )
 MARK_READ_SCHEMA = vol.Schema(
@@ -68,6 +70,7 @@ MARK_READ_SCHEMA = vol.Schema(
 DELETE_SCHEMA = vol.Schema(
     {
         vol.Optional("ids"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional("tags"): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional("all", default=False): cv.boolean,
         vol.Optional("only_read", default=False): cv.boolean,
     }
@@ -107,6 +110,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             category=d.get("category"),
             type_name=d.get("type_name"),
             data=d.get("data"),
+            once=d["once"],
+            baseline=d["baseline"],
         )
 
     async def handle_mark_read(call: ServiceCall) -> None:
@@ -116,7 +121,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def handle_delete(call: ServiceCall) -> None:
         d = call.data
         await _manager(hass).async_delete(
-            d.get("ids"), delete_all=d["all"], only_read=d["only_read"]
+            d.get("ids"), delete_all=d["all"], only_read=d["only_read"], tags=d.get("tags")
         )
 
     async def handle_set_type(call: ServiceCall) -> None:

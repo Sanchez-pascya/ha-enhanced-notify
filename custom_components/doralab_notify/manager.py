@@ -43,6 +43,8 @@ _LOGGER = logging.getLogger(__name__)
 
 _UNSET: Any = object()
 
+MAX_SEEN = 5000
+
 
 class NotificationManager:
     """Hält alle Meldungen und Typ-Einstellungen."""
@@ -55,6 +57,8 @@ class NotificationManager:
         self.custom_types: dict[str, dict[str, Any]] = {}
         self.type_settings: dict[str, dict[str, Any]] = {}
         self.stats: dict[str, dict[str, Any]] = {}
+        # Bereits gemeldete Tags (für ``once``), älteste zuerst, begrenzt
+        self.seen: dict[str, None] = {}
         self._listeners: list[Callable[[], None]] = []
 
     # ------------------------------------------------------------------ Speicher
@@ -65,6 +69,7 @@ class NotificationManager:
         self.custom_types = dict(data.get("custom_types", {}))
         self.type_settings = dict(data.get("type_settings", {}))
         self.stats = dict(data.get("stats", {}))
+        self.seen = dict.fromkeys(data.get("seen", []))
 
     def _data_to_save(self) -> dict[str, Any]:
         return {
@@ -72,6 +77,7 @@ class NotificationManager:
             "custom_types": self.custom_types,
             "type_settings": self.type_settings,
             "stats": self.stats,
+            "seen": list(self.seen),
         }
 
     async def async_flush(self) -> None:
@@ -223,8 +229,27 @@ class NotificationManager:
         category: str | None = None,
         type_name: str | None = None,
         data: dict[str, Any] | None = None,
+        once: bool = False,
+        baseline: bool = False,
     ) -> dict[str, Any]:
-        """Neue Meldung anlegen (oder per ``tag`` aktualisieren) und pushen."""
+        """Neue Meldung anlegen (oder per ``tag`` aktualisieren) und pushen.
+
+        ``once``: Der ``tag`` wird nur ein einziges Mal gemeldet, auch wenn die
+        Meldung inzwischen gelöscht wurde (z. B. neue Kalendertermine).
+        ``baseline`` (nur mit ``once``): den ``tag`` nur als gesehen vormerken,
+        ohne Meldung und Push (stiller Erstlauf).
+        """
+        if (once or baseline) and not tag:
+            raise ServiceValidationError("once und baseline brauchen einen tag")
+        if once or baseline:
+            if tag in self.seen:
+                return {"id": None, "deduplicated": True}
+            self.seen[tag] = None
+            while len(self.seen) > MAX_SEEN:
+                self.seen.pop(next(iter(self.seen)))
+            self._changed()
+            if baseline:
+                return {"id": None, "deduplicated": False, "baseline": True}
         type_id = slugify(type_id)
         if not type_id:
             raise ServiceValidationError("Der Typ darf nicht leer sein")
@@ -381,13 +406,19 @@ class NotificationManager:
         *,
         delete_all: bool = False,
         only_read: bool = False,
+        tags: list[str] | None = None,
     ) -> int:
         wanted = set(ids or [])
+        wanted_tags = set(tags or [])
         removed: list[dict[str, Any]] = []
         kept: list[dict[str, Any]] = []
         for item in self.items:
             hit = (
-                (delete_all or item["id"] in wanted)
+                (
+                    delete_all
+                    or item["id"] in wanted
+                    or (bool(item.get("tag")) and item["tag"] in wanted_tags)
+                )
                 and (not only_read or item.get("read"))
             )
             (removed if hit else kept).append(item)

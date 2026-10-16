@@ -52,6 +52,14 @@ send:
       example: Mein neuer Typ
       selector:
         text:
+    once:
+      default: false
+      selector:
+        boolean:
+    baseline:
+      default: false
+      selector:
+        boolean:
 
 mark_read:
   fields:
@@ -72,6 +80,10 @@ delete:
   fields:
     ids:
       example: '["a1b2c3"]'
+      selector:
+        object:
+    tags:
+      example: '["vorrat_niedrig:Sprite"]'
       selector:
         object:
     all:
