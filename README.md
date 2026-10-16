@@ -11,7 +11,7 @@ Zentrale Benachrichtigungsliste für Home Assistant, gedacht für Wand-Tablet (K
 
 ## Installation (HACS)
 
-1. HACS → Integrationen → ⋮ → *Benutzerdefinierte Repositories* → `dominikramachers/ha-doralab-notify`, Kategorie *Integration*.
+1. HACS → Integrationen → ⋮ → *Benutzerdefinierte Repositories* → `dominikramachers/ha-enhanced-notify`, Kategorie *Integration*.
 2. Installieren, Home Assistant neu starten.
 3. Einstellungen → Geräte & Dienste → Integration hinzufügen → **DORALAB Benachrichtigungen**.
 
