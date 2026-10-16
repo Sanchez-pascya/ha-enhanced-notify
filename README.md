@@ -28,7 +28,7 @@ data:
   push: true                      # optional: false = nur in die Zentrale
 ```
 
-Gleicher `tag` mit geändertem Text aktualisiert die vorhandene Meldung (wird wieder ungelesen, rückt nach oben, Push wird ersetzt). Gleicher Tag mit gleichem Text wird ignoriert, das fängt Zustands-Flattern ab.
+Gleicher `tag` mit geändertem Text aktualisiert die vorhandene Meldung (wird wieder ungelesen, rückt nach oben, Push wird ersetzt). Gleicher Tag mit gleichem Titel und Text wird ignoriert, solange sich der Inhalt nicht ändert: Die Integration merkt sich je Tag dauerhaft den zuletzt gemeldeten Inhalt. Eine gelesene oder gelöschte Meldung taucht deshalb nicht wieder auf, auch nicht nach einem Neustart oder wenn eine Automation sie erneut sendet; erst ein geänderter Text meldet wieder (neu, ungelesen, mit Push). Meldungen ohne `tag` und übernommene HA-Meldungen sind davon ausgenommen.
 
 ### Nur einmal melden (`once`, `baseline`)
 

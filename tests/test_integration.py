@@ -17,7 +17,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 
-from custom_components.doralab_notify.const import DOMAIN, EVENT_CREATED
+from custom_components.doralab_notify.const import DOMAIN, EVENT_CREATED, TAG_PERSISTENT_PREFIX
 
 
 def _sensor_state(hass: HomeAssistant):
@@ -397,3 +397,56 @@ async def test_seen_persists_across_reload(hass: HomeAssistant):
     await hass.async_block_till_done()
     manager = hass.data[DOMAIN]
     assert "kal:9" in manager.seen
+
+
+async def test_deleted_or_read_message_does_not_return(hass: HomeAssistant):
+    """Gleicher Inhalt zum gleichen Tag darf nach Lesen/Löschen nicht neu auftauchen."""
+    _, manager = await _setup(hass)
+    r = await manager.async_send("paket_unterwegs", "Unterwegs", title="Hermes", tag="paket:1", push=False)
+    assert r["deduplicated"] is False
+    await manager.async_mark_read([r["id"]])
+    again = await manager.async_send("paket_unterwegs", "Unterwegs", title="Hermes", tag="paket:1", push=False)
+    assert again["deduplicated"] is True and manager.items[0]["read"] is True
+    await manager.async_delete([r["id"]])
+    assert manager.items == []
+    again = await manager.async_send("paket_unterwegs", "Unterwegs", title="Hermes", tag="paket:1", push=False)
+    assert again["deduplicated"] is True and manager.items == []
+    # geänderter Inhalt meldet wieder, danach wieder A -> kommt auch wieder
+    await manager.async_send("paket_unterwegs", "In Zustellung", title="Hermes", tag="paket:1", push=False)
+    assert [i["message"] for i in manager.items] == ["In Zustellung"]
+    await manager.async_delete(tags=["paket:1"])
+    back = await manager.async_send("paket_unterwegs", "Unterwegs", title="Hermes", tag="paket:1", push=False)
+    assert back["deduplicated"] is False and [i["message"] for i in manager.items] == ["Unterwegs"]
+
+
+async def test_untagged_and_persistent_still_repeat(hass: HomeAssistant):
+    _, manager = await _setup(hass)
+    await manager.async_send("klingel", "Es klingelt", push=False)
+    await manager.async_send("klingel", "Es klingelt", push=False)
+    assert len(manager.items) == 2
+    await manager.async_import_persistent("dreame_x", "Staubsauger", "Reinigung abgeschlossen")
+    first = [i for i in manager.items if i["tag"] == f"{TAG_PERSISTENT_PREFIX}dreame_x"]
+    await manager.async_delete([first[0]["id"]])
+    await manager.async_import_persistent("dreame_x", "Staubsauger", "Reinigung abgeschlossen")
+    assert any(i["tag"] == f"{TAG_PERSISTENT_PREFIX}dreame_x" for i in manager.items)
+
+
+async def test_announced_survives_restart_and_bootstraps(hass: HomeAssistant):
+    entry, manager = await _setup(hass)
+    r = await manager.async_send("paket_unterwegs", "A", title="T", tag="paket:9", push=False)
+    await manager.async_delete([r["id"]])
+    await manager.async_flush()
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    manager = hass.data[DOMAIN]
+    res = await manager.async_send("paket_unterwegs", "A", title="T", tag="paket:9", push=False)
+    assert res["deduplicated"] is True and manager.items == []
+    # Bestehende Meldung aus einem alten Speicher (ohne announced) wird übernommen
+    await manager.async_send("paket_unterwegs", "B", title="T", tag="paket:10", push=False)
+    manager.announced.clear()
+    await manager.async_flush()
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    manager = hass.data[DOMAIN]
+    res = await manager.async_send("paket_unterwegs", "B", title="T", tag="paket:10", push=False)
+    assert res["deduplicated"] is True
