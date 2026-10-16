@@ -450,3 +450,21 @@ async def test_announced_survives_restart_and_bootstraps(hass: HomeAssistant):
     manager = hass.data[DOMAIN]
     res = await manager.async_send("paket_unterwegs", "B", title="T", tag="paket:10", push=False)
     assert res["deduplicated"] is True
+
+
+async def test_old_system_vacuum_items_move_to_saugroboter(hass: HomeAssistant):
+    _, manager = await _setup(hass)
+    manager.items.append(
+        {
+            "id": "old1", "type": "ha_system", "category": "system", "title": "Staubsauger",
+            "message": "Bitte füllen Sie den Frischwassertank auf.", "tag": f"{TAG_PERSISTENT_PREFIX}dreame_w",
+            "link": None, "icon": None, "created": "2026-10-16T08:00:00+00:00", "updated": "2026-10-16T08:00:00+00:00",
+            "read": False, "read_at": None, "count": 1, "pushed": [],
+            "data": {"source": "persistent_notification", "original_title": "Staubsauger",
+                     "original_message": "Bitte füllen Sie den Frischwassertank auf."},
+        }
+    )
+    manager._retranslate_persistent()
+    item = next(i for i in manager.items if i["id"] == "old1")
+    assert item["type"] == "saugroboter_wartung" and item["category"] == "saugroboter"
+    assert item["title"] == "Wassertank fast leer"
